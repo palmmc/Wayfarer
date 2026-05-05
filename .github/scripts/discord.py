@@ -12,6 +12,11 @@ webhook_url = sys.argv[1]
 modrinth_id = sys.argv[2]
 version_number = sys.argv[3]
 
+# Make sure repo contains secret
+if not webhook_url or not webhook_url.strip():
+    print("Missing DISCORD_WEBHOOK_URL secret")
+    sys.exit(1)
+
 def fetch_json(url):
     req = urllib.request.Request(url, headers={'User-Agent': 'Playground-Discord-Embed/1.0 (Github-Actions)'})
     with urllib.request.urlopen(req) as res:
@@ -24,25 +29,38 @@ try:
     icon_url = project_data.get("icon_url")
     slug = project_data.get("slug")
 
-    # Gets details for specific version.
+    # Gets all versions for the project.
     versions = fetch_json(f"https://api.modrinth.com/v2/project/{modrinth_id}/version")
     
-    # Gets version matching the version_number.
-    version_data = next((v for v in versions if v["version_number"] == version_number), None)
+    # Gets versions matching tag.
+    matching_versions = [v for v in versions if v["version_number"] == version_number]
 
-    if not version_data:
+    if not matching_versions:
         print(f"Error: Version {version_number} not found for project {modrinth_id}")
         sys.exit(1)
 
-    version_name = version_data.get("name", f"{mod_name} {version_number}")
-    changelog = version_data.get("changelog", "")
-    release_type = version_data.get("version_type", "release").lower()
-    game_versions = version_data.get("game_versions", [])
-    game_versions_str = ", ".join(game_versions)
-    version_id = version_data["id"]
-    loaders = version_data.get("loaders", [])
-    mod_loaders_str = ", ".join(l.capitalize() for l in loaders)
+    main_version = matching_versions[0]
+    changelog = main_version.get("changelog", "")
+    release_type = main_version.get("version_type", "release").lower()
     
+    if len(matching_versions) == 1:
+        v = matching_versions[0]
+        game_versions = v.get("game_versions", [])
+        loaders = v.get("loaders", [])
+        loader_str = ", ".join(game_versions) + " (" + ", ".join(l.capitalize() for l in loaders) + ")"
+        download_str = f"[**Modrinth**](https://modrinth.com/mod/{slug}/version/{v['id']})"
+    else:
+        loader_lines = []
+        download_lines = []
+        for v in matching_versions:
+            game_versions = v.get("game_versions", [])
+            loaders = v.get("loaders", [])
+            mod_loaders_str = ", ".join(l.capitalize() for l in loaders)
+            loader_lines.append(", ".join(game_versions) + " (" + mod_loaders_str + ")")
+            download_lines.append(f"[**{mod_loaders_str} (Modrinth)**](https://modrinth.com/mod/{slug}/version/{v['id']})")
+        
+        loader_str = "\n".join(loader_lines)
+        download_str = "\n".join(download_lines)
 
 except Exception as e:
     print(f"Error fetching data from Modrinth: {e}")
@@ -66,8 +84,8 @@ payload = {
         "thumbnail": { "url": icon_url } if icon_url else None,
         "fields": [
             { "name": "Version", "value": version_number, "inline": True },
-            { "name": "Loader", "value": game_versions_str + " (" + mod_loaders_str + ")", "inline": True },
-            { "name": "Download", "value": f"[**Modrinth**](https://modrinth.com/mod/{slug}/version/{version_id})", "inline": True }
+            { "name": "Loader", "value": loader_str, "inline": True },
+            { "name": "Download", "value": download_str, "inline": True }
         ],
         "footer": { "text": "Modrinth Release" },
         "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
