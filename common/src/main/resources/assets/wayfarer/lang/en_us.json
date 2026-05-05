@@ -1,0 +1,33 @@
+{
+  // Keybinds
+  "key.wayfarer.locator_bar": "Show Locator Bar",
+  "key.category.wayfarer.main": "Wayfarer",
+  // Configuration
+  "config.wayfarer.title": "Wayfarer",
+  // General Configuration
+  "config.wayfarer.category.general": "General",
+  "config.wayfarer.waypointScale": "Waypoint Scale",
+  "config.wayfarer.waypointScale.description": "Modifies the scale of waypoint rendering.",
+  "config.wayfarer.waypointLabelFormat": "Label Format",
+  "config.wayfarer.waypointLabelFormat.description": "Customizes the format used for waypoint labels. %s = Name, %d = Distance.",
+  "config.wayfarer.waypointViewDistance": "View Distance",
+  "config.wayfarer.waypointViewDistance.description": "The maximum distance in blocks before a waypoint stops rendering. Set to -1 for no limit.",
+  // Animations Configuration
+  "config.wayfarer.category.animations": "Animations",
+  "config.wayfarer.waypointFadeInCurve": "Fade In Curve",
+  "config.wayfarer.waypointFadeInCurve.description": "Mathematical curve used for fade in animation.",
+  "config.wayfarer.waypointFadeInDuration": "Fade In Duration (ms)",
+  "config.wayfarer.waypointFadeInDuration.description": "How long to fade in for in milliseconds.",
+  "config.wayfarer.waypointFadeOutCurve": "Fade Out Curve",
+  "config.wayfarer.waypointFadeOutCurve.description": "Mathematical curve used for fade out animation.",
+  "config.wayfarer.waypointFadeOutDuration": "Fade Out Duration (ms)",
+  "config.wayfarer.waypointFadeOutDuration.description": "How long to fade out for in milliseconds.",
+  // Visibility Configuration
+  "config.wayfarer.category.visibility": "Visibility",
+  "config.wayfarer.showWaypointLabels": "Show Labels",
+  "config.wayfarer.showWaypointLabels.description": "Controls when name and distance labels should be visible.",
+  "config.wayfarer.showWaypointIcons": "Show Icons",
+  "config.wayfarer.showWaypointIcons.description": "Controls when player head and waypoint icons should be visible.",
+  "config.wayfarer.showLocatorIcons": "Show Locator Icons",
+  "config.wayfarer.showLocatorIcons.description": "Controls when locator waypoint icons should be visible."
+}
