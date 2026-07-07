@@ -23,7 +23,7 @@ public class LocatorBarRenderer {
     }
 
     public void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
-        if (this.minecraft.player == null)
+        if (this.minecraft.player == null || this.minecraft.player.isCreative() || this.minecraft.player.isSpectator())
             return;
 
         float partialTick = deltaTracker.getGameTimeDeltaTicks();
@@ -37,7 +37,7 @@ public class LocatorBarRenderer {
         float playerYaw = this.minecraft.player.getViewYRot(partialTick);
         Vec3 cameraPos = this.minecraft.player.getEyePosition(partialTick);
 
-        boolean showHeads = WayfarerConfig.showLocatorIcons == WayfarerConfig.LocatorVisibilityMode.ALWAYS ||
+        boolean showIcons = WayfarerConfig.showLocatorIcons == WayfarerConfig.LocatorVisibilityMode.ALWAYS ||
                 (WayfarerConfig.showLocatorIcons == WayfarerConfig.LocatorVisibilityMode.HOLD
                         && WayfarerKeys.locatorBarAlpha > 0);
 
@@ -69,14 +69,37 @@ public class LocatorBarRenderer {
                 float xOffset = (relativeYaw / 90.0f) * (barWidth / 2.0f);
                 int iconX = (int) (centerX + xOffset) - 4;
                 int iconY = y - 2;
-                RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, distFactor);
-                graphics.blitSprite(DOT_ICON, iconX, iconY, 8, 8);
-                RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-                if (showHeads && wp.icon != null && wp.icon.getNamespace().equals("wayfarer")
-                        && wp.icon.getPath().equals("player")) {
-                    float headAlpha = distFactor * WayfarerKeys.locatorBarAlpha;
-                    renderPlayerHead(graphics, wp.name, iconX, iconY, headAlpha);
+                boolean hasIcon = wp.icon != null;
+                boolean showIcon = showIcons && hasIcon;
+
+                float dotAlpha = distFactor;
+                float iconAlpha = 0.0f;
+
+                if (showIcon) {
+                    if (WayfarerConfig.showLocatorIcons == WayfarerConfig.LocatorVisibilityMode.ALWAYS) {
+                        dotAlpha = 0.0f;
+                        iconAlpha = distFactor;
+                    } else if (WayfarerConfig.showLocatorIcons == WayfarerConfig.LocatorVisibilityMode.HOLD) {
+                        dotAlpha = distFactor * (1.0f - WayfarerKeys.locatorBarAlpha);
+                        iconAlpha = distFactor * WayfarerKeys.locatorBarAlpha;
+                    }
+                }
+
+                if (dotAlpha > 0.0f) {
+                    RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, dotAlpha);
+                    graphics.blitSprite(DOT_ICON, iconX, iconY, 8, 8);
+                    RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+                }
+
+                if (iconAlpha > 0.0f && wp.icon != null) {
+                    if (wp.icon.getNamespace().equals("wayfarer") && wp.icon.getPath().equals("player")) {
+                        renderPlayerHead(graphics, wp.name, iconX, iconY, iconAlpha);
+                    } else {
+                        RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, iconAlpha);
+                        graphics.blit(wp.icon, iconX, iconY, 8, 8, 0.0f, 0.0f, 16, 16, 16, 16);
+                        RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+                    }
                 }
             }
         }

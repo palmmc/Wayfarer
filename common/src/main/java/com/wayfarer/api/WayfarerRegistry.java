@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import com.wayfarer.network.S2CWaypointPacket;
+import com.wayfarer.network.S2CWaypointSyncPacket;
 import com.wayfarer.platform.Services;
 
 public class WayfarerRegistry {
@@ -86,6 +87,10 @@ public class WayfarerRegistry {
                 true));
     }
 
+    public static void syncWaypoints(ServerPlayer player, List<Waypoint> waypoints) {
+        Services.PLATFORM.sendToPlayer(player, new S2CWaypointSyncPacket(waypoints));
+    }
+
     public static void clearWaypoints() {
         STATIC_PROVIDER.clear();
         NETWORK_PROVIDER.clear();
@@ -126,16 +131,37 @@ public class WayfarerRegistry {
     public static class SimpleProvider implements WaypointProvider {
         private final List<Waypoint> waypoints = new ArrayList<>();
 
-        public void add(Waypoint wp) {
+        public synchronized void add(Waypoint wp) {
             waypoints.add(wp);
         }
 
-        public void clear() {
+        public synchronized void addOrUpdate(Waypoint wp) {
+            wp.lastUpdatedTime = System.currentTimeMillis();
+            for (int i = 0; i < waypoints.size(); i++) {
+                if (waypoints.get(i).name.equals(wp.name)) {
+                    waypoints.set(i, wp);
+                    return;
+                }
+            }
+            waypoints.add(wp);
+        }
+
+        public synchronized void removeByName(String name) {
+            waypoints.removeIf(wp -> wp.name.equals(name));
+        }
+
+        public synchronized void clear() {
             waypoints.clear();
         }
 
+        public synchronized void clearNonLocators() {
+            waypoints.removeIf(wp -> wp.type != WaypointType.LOCATOR_ONLY);
+        }
+
         @Override
-        public Collection<Waypoint> getWaypoints() {
+        public synchronized Collection<Waypoint> getWaypoints() {
+            long now = System.currentTimeMillis();
+            waypoints.removeIf(wp -> wp.type == WaypointType.LOCATOR_ONLY && (now - wp.lastUpdatedTime > 3000));
             return waypoints;
         }
     }
@@ -147,6 +173,7 @@ public class WayfarerRegistry {
         public final int color;
         public final WaypointType type;
         public final LocatorType locatorType;
+        public long lastUpdatedTime;
 
         public Waypoint(String name, BlockPos pos, ResourceLocation icon, int color) {
             this(name, pos, icon, color, WaypointType.STANDARD, LocatorType.STANDARD);
@@ -164,6 +191,7 @@ public class WayfarerRegistry {
             this.color = color;
             this.type = type;
             this.locatorType = locatorType;
+            this.lastUpdatedTime = System.currentTimeMillis();
         }
     }
 }

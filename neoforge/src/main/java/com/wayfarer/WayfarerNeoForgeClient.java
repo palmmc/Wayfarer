@@ -3,6 +3,7 @@ package com.wayfarer;
 import com.wayfarer.api.WayfarerRegistry;
 import com.wayfarer.client.WayfarerRenderer;
 import com.wayfarer.network.S2CWaypointPacket;
+import com.wayfarer.network.S2CWaypointSyncPacket;
 import net.minecraft.client.Minecraft;
 
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -25,15 +26,28 @@ public class WayfarerNeoForgeClient {
     public static void handlePacket(S2CWaypointPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (packet.clear()) {
-                WayfarerRegistry.NETWORK_PROVIDER.clear();
+                if (packet.name().isEmpty()) {
+                    WayfarerRegistry.NETWORK_PROVIDER.clear();
+                } else {
+                    WayfarerRegistry.NETWORK_PROVIDER.removeByName(packet.name());
+                }
             } else {
-                WayfarerRegistry.NETWORK_PROVIDER.add(new WayfarerRegistry.Waypoint(
+                WayfarerRegistry.NETWORK_PROVIDER.addOrUpdate(new WayfarerRegistry.Waypoint(
                         packet.name(),
                         packet.pos(),
                         packet.icon(),
                         packet.color(),
                         packet.waypointType(),
                         packet.locatorType()));
+            }
+        });
+    }
+
+    public static void handleSyncPacket(S2CWaypointSyncPacket packet, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            WayfarerRegistry.NETWORK_PROVIDER.clearNonLocators();
+            for (WayfarerRegistry.Waypoint wp : packet.waypoints()) {
+                WayfarerRegistry.NETWORK_PROVIDER.addOrUpdate(wp);
             }
         });
     }

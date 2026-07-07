@@ -2,6 +2,7 @@ package com.wayfarer;
 
 import com.wayfarer.client.WayfarerConfigScreen;
 import com.wayfarer.network.S2CWaypointPacket;
+import com.wayfarer.network.S2CWaypointSyncPacket;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -42,6 +43,10 @@ public class WayfarerNeoForge {
         private static void handlePacket(S2CWaypointPacket packet, IPayloadContext context) {
             WayfarerNeoForgeClient.handlePacket(packet, context);
         }
+
+        private static void handleSyncPacket(S2CWaypointSyncPacket packet, IPayloadContext context) {
+            WayfarerNeoForgeClient.handleSyncPacket(packet, context);
+        }
     }
 
     private void registerNetworking(RegisterPayloadHandlersEvent event) {
@@ -52,6 +57,14 @@ public class WayfarerNeoForge {
                 (packet, context) -> {
                     if (FMLEnvironment.dist == Dist.CLIENT) {
                         ClientOnly.handlePacket(packet, context);
+                    }
+                });
+        registrar.playToClient(
+                S2CWaypointSyncPacket.TYPE,
+                S2CWaypointSyncPacket.STREAM_CODEC,
+                (packet, context) -> {
+                    if (FMLEnvironment.dist == Dist.CLIENT) {
+                        ClientOnly.handleSyncPacket(packet, context);
                     }
                 });
     }
