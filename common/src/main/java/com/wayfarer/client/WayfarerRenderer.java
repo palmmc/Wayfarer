@@ -23,13 +23,15 @@ import com.mojang.math.Axis;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Map;
+import java.util.List;
+import java.util.Objects;
+import net.minecraft.client.multiplayer.PlayerInfo;
 
 public class WayfarerRenderer {
     private static final float BASE_SCALE_FACTOR = 0.006f;
-    private static final Map<String, WaypointState> WAYPOINT_STATES = new HashMap<>();
+    private static final List<WaypointState> WAYPOINT_STATES = new ArrayList<>();
     private static long lastFrameTime = 0;
 
     private static class WaypointState {
@@ -60,24 +62,41 @@ public class WayfarerRenderer {
             return;
         }
 
-        for (WaypointState state : WAYPOINT_STATES.values()) {
+        for (WaypointState state : WAYPOINT_STATES) {
             state.active = false;
         }
 
         for (Waypoint waypoint : WayfarerRegistry.getWaypoints()) {
-            String key = waypoint.name + waypoint.pos.toString()
-                    + (waypoint.icon != null ? waypoint.icon.toString() : "");
-            WaypointState state = WAYPOINT_STATES.computeIfAbsent(key, k -> new WaypointState(waypoint));
-            state.waypoint = waypoint;
-            state.active = true;
+            WaypointState match = null;
+            double minDsq = Double.MAX_VALUE;
+            for (WaypointState state : WAYPOINT_STATES) {
+                if (!state.active && state.waypoint.name.equals(waypoint.name)
+                        && Objects.equals(state.waypoint.icon, waypoint.icon)) {
+                    double dx = state.waypoint.pos.getX() - waypoint.pos.getX();
+                    double dy = state.waypoint.pos.getY() - waypoint.pos.getY();
+                    double dz = state.waypoint.pos.getZ() - waypoint.pos.getZ();
+                    double dsq = dx * dx + dy * dy + dz * dz;
+                    if (dsq < minDsq) {
+                        minDsq = dsq;
+                        match = state;
+                    }
+                }
+            }
+            if (match != null) {
+                match.waypoint = waypoint;
+                match.active = true;
+            } else {
+                WaypointState newState = new WaypointState(waypoint);
+                newState.active = true;
+                WAYPOINT_STATES.add(newState);
+            }
         }
 
         float bScale = WayfarerConfig.waypointScale;
 
-        Iterator<Map.Entry<String, WaypointState>> it = WAYPOINT_STATES.entrySet().iterator();
+        Iterator<WaypointState> it = WAYPOINT_STATES.iterator();
         while (it.hasNext()) {
-            Map.Entry<String, WaypointState> entry = it.next();
-            WaypointState state = entry.getValue();
+            WaypointState state = it.next();
             Waypoint waypoint = state.waypoint;
 
             double dx = (waypoint.pos.getX() + 0.5) - cameraPos.x;
@@ -174,7 +193,7 @@ public class WayfarerRenderer {
         if (icon != null && WayfarerConfig.showWaypointIcons != VisibilityMode.NEVER) {
             poseStack.pushPose();
             poseStack.translate(0, -8.0f, 0);
-            renderIcon(poseStack, consumers, icon, 14f, curve, visualFade);
+            renderIcon(poseStack, consumers, icon, 14f, curve, visualFade, label);
             poseStack.popPose();
         }
 
@@ -232,8 +251,9 @@ public class WayfarerRenderer {
         poseStack.popPose();
     }
 
-    private static void renderIcon(PoseStack ps, MultiBufferSource consumers, Identifier icon, float size, float curve,
-            float fadeProgress) {
+    private static void renderIcon(PoseStack ps, MultiBufferSource consumers, Identifier icon, float size,
+            float curve,
+            float fadeProgress, String name) {
         Minecraft client = Minecraft.getInstance();
         float half = size / 2f;
         int alphaSolid = (int) (255 * fadeProgress);
@@ -241,12 +261,24 @@ public class WayfarerRenderer {
         Identifier finalIcon = icon;
         float u1 = 0, v1 = 0, u2 = 1, v2 = 1;
 
-        if (icon.getNamespace().equals("wayfarer") && icon.getPath().equals("player") && client.player != null) {
-            finalIcon = client.player.getSkin().body().texturePath();
-            u1 = 8 / 64f;
-            v1 = 8 / 64f;
-            u2 = 16 / 64f;
-            v2 = 16 / 64f;
+        if (icon.getNamespace().equals("wayfarer") && icon.getPath().equals("player")) {
+            Identifier skin = null;
+            if (client.getConnection() != null) {
+                PlayerInfo playerInfo = client.getConnection().getPlayerInfo(name);
+                if (playerInfo != null) {
+                    skin = playerInfo.getSkin().body().texturePath();
+                }
+            }
+            if (skin == null && client.player != null) {
+                skin = client.player.getSkin().body().texturePath();
+            }
+            if (skin != null) {
+                finalIcon = skin;
+                u1 = 8 / 64f;
+                v1 = 8 / 64f;
+                u2 = 16 / 64f;
+                v2 = 16 / 64f;
+            }
         }
 
         Matrix4f mat = ps.last().pose();

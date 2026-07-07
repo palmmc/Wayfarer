@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import com.wayfarer.network.S2CWaypointPacket;
+import com.wayfarer.network.S2CWaypointSyncPacket;
 import com.wayfarer.platform.Services;
 
 public class WayfarerRegistry {
@@ -82,6 +83,10 @@ public class WayfarerRegistry {
                 true));
     }
 
+    public static void syncWaypoints(ServerPlayer player, List<Waypoint> waypoints) {
+        Services.PLATFORM.sendToPlayer(player, new S2CWaypointSyncPacket(waypoints));
+    }
+
     public static void clearWaypoints() {
         STATIC_PROVIDER.clear();
         NETWORK_PROVIDER.clear();
@@ -116,6 +121,24 @@ public class WayfarerRegistry {
 
         public void add(Waypoint wp) {
             waypoints.add(wp);
+        }
+
+        public void addOrUpdate(Waypoint wp) {
+            for (int i = 0; i < waypoints.size(); i++) {
+                if (waypoints.get(i).name.equals(wp.name)) {
+                    waypoints.set(i, wp);
+                    return;
+                }
+            }
+            waypoints.add(wp);
+        }
+
+        public void removeByName(String name) {
+            waypoints.removeIf(wp -> wp.name.equals(name));
+        }
+
+        public void clearNonLocators() {
+            waypoints.clear();
         }
 
         public void clear() {

@@ -10,5 +10,6 @@ public class WayfarerFabric implements ModInitializer {
     public void onInitialize() {
         CommonClass.init();
         PayloadTypeRegistry.clientboundPlay().register(S2CWaypointPacket.TYPE, S2CWaypointPacket.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(com.wayfarer.network.S2CWaypointSyncPacket.TYPE, com.wayfarer.network.S2CWaypointSyncPacket.STREAM_CODEC);
     }
 }

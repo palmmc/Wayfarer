@@ -43,6 +43,15 @@ public class WayfarerFabricClient implements ClientModInitializer {
             });
         });
 
+        ClientPlayNetworking.registerGlobalReceiver(com.wayfarer.network.S2CWaypointSyncPacket.TYPE, (payload, context) -> {
+            context.client().execute(() -> {
+                WayfarerRegistry.NETWORK_PROVIDER.clearNonLocators();
+                for (WayfarerRegistry.Waypoint wp : payload.waypoints()) {
+                    WayfarerRegistry.NETWORK_PROVIDER.addOrUpdate(wp);
+                }
+            });
+        });
+
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             com.wayfarer.client.WayfarerCommands.register(dispatcher);
         });

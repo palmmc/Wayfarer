@@ -84,7 +84,7 @@ processResources {
 publishing {
     publications {
         register('mavenJava', MavenPublication) {
-            artifactId base.archivesName.get()
+            artifactId 'wayfarerlib'
             from components.java
         }
     }

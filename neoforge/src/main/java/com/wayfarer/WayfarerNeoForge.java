@@ -41,6 +41,10 @@ public class WayfarerNeoForge {
         private static void handlePacket(S2CWaypointPacket packet, IPayloadContext context) {
             WayfarerNeoForgeClient.handlePacket(packet, context);
         }
+
+        private static void handlePacket(com.wayfarer.network.S2CWaypointSyncPacket packet, IPayloadContext context) {
+            WayfarerNeoForgeClient.handlePacket(packet, context);
+        }
     }
 
     private void registerNetworking(RegisterPayloadHandlersEvent event) {
@@ -48,6 +52,14 @@ public class WayfarerNeoForge {
         registrar.playToClient(
                 S2CWaypointPacket.TYPE,
                 S2CWaypointPacket.STREAM_CODEC,
+                (packet, context) -> {
+                    if (FMLEnvironment.getDist() == Dist.CLIENT) {
+                        ClientOnly.handlePacket(packet, context);
+                    }
+                });
+        registrar.playToClient(
+                com.wayfarer.network.S2CWaypointSyncPacket.TYPE,
+                com.wayfarer.network.S2CWaypointSyncPacket.STREAM_CODEC,
                 (packet, context) -> {
                     if (FMLEnvironment.getDist() == Dist.CLIENT) {
                         ClientOnly.handlePacket(packet, context);

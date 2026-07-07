@@ -40,6 +40,15 @@ public class WayfarerNeoForgeClient {
         });
     }
 
+    public static void handlePacket(com.wayfarer.network.S2CWaypointSyncPacket packet, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            WayfarerRegistry.NETWORK_PROVIDER.clearNonLocators();
+            for (WayfarerRegistry.Waypoint wp : packet.waypoints()) {
+                WayfarerRegistry.NETWORK_PROVIDER.addOrUpdate(wp);
+            }
+        });
+    }
+
     public static void onRegisterCommands(RegisterClientCommandsEvent event) {
         WayfarerCommands.register(event.getDispatcher());
     }

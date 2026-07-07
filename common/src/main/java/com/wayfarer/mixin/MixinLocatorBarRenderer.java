@@ -51,6 +51,11 @@ public abstract class MixinLocatorBarRenderer {
         if (cameraEntity == null || this.minecraft.level == null)
             return;
 
+        if (this.minecraft.player != null && (this.minecraft.player.isCreative() || this.minecraft.player.isSpectator())) {
+            ci.cancel();
+            return;
+        }
+
         long now = System.currentTimeMillis();
         float deltaTime = lastFrameTime_locator == 0 ? 0 : (now - lastFrameTime_locator) / 1000f;
         lastFrameTime_locator = now;
@@ -77,6 +82,10 @@ public abstract class MixinLocatorBarRenderer {
         }
 
         for (Waypoint waypoint : WayfarerRegistry.getWaypoints()) {
+            if (waypoint.icon != null && waypoint.icon.getNamespace().equals("wayfarer")
+                    && waypoint.icon.getPath().equals("player")) {
+                continue;
+            }
             String key = "wp_" + waypoint.name + "_" + waypoint.pos.toString() + "_"
                     + (waypoint.icon != null ? waypoint.icon.toString() : "");
             LocatorBarRendererState state = LOCATOR_STATES.computeIfAbsent(key, k -> new LocatorBarRendererState());
@@ -191,21 +200,22 @@ public abstract class MixinLocatorBarRenderer {
                 boolean isPlayerType = (icon != null && icon.getNamespace().equals("wayfarer")
                         && icon.getPath().equals("player"));
 
-                int halfSize = iconSize / 2;
-                int offset = iconSize == 9 ? -2 : 0;
+                int drawSize = (player != null || isPlayerType) ? 8 : iconSize;
+                int halfSize = drawSize / 2;
+                int offset = (drawSize == 9 || drawSize == 8) ? -2 : 0;
                 int renderY = top + offset;
 
                 if (player instanceof AbstractClientPlayer clientPlayer) {
                     Identifier skinPath = clientPlayer.getSkin().body().texturePath();
                     graphics.blit(RenderPipelines.GUI_TEXTURED, skinPath,
                             screenX - halfSize, renderY, 8.0f, 8.0f,
-                            iconSize, iconSize, 8, 8, 64, 64, iconColor);
+                            drawSize, drawSize, 8, 8, 64, 64, iconColor);
                 } else if (isPlayerType
                         && this.minecraft.player instanceof AbstractClientPlayer localPlayer) {
                     Identifier skinPath = localPlayer.getSkin().body().texturePath();
                     graphics.blit(RenderPipelines.GUI_TEXTURED, skinPath,
                             screenX - halfSize, renderY, 8.0f, 8.0f,
-                            iconSize, iconSize, 8, 8, 64, 64, iconColor);
+                            drawSize, drawSize, 8, 8, 64, 64, iconColor);
                 } else if (icon != null) {
                     graphics.blit(RenderPipelines.GUI_TEXTURED, icon,
                             screenX - halfSize, renderY, 0.0F, 0.0F,
