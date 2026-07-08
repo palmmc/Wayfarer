@@ -95,6 +95,7 @@ jobs:
           status: listed
           loaders: |-
             fabric
+            quilt
           game-versions: ${{ steps.metadata.outputs.game_versions }}
           dependencies: ${{ steps.metadata.outputs.deps_fabric }}
           files: ${{ steps.metadata.outputs.fabric_jar }}
