@@ -9,9 +9,11 @@ import com.wayfarer.util.AnimationHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Camera;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
@@ -45,7 +47,7 @@ public class WayfarerRenderer {
         }
     }
 
-    public static void render(PoseStack poseStack, Camera camera, MultiBufferSource bufferSource) {
+    public static void render(PoseStack poseStack, Camera camera, SubmitNodeCollector nodeCollector, CameraRenderState cameraRenderState) {
         Minecraft client = Minecraft.getInstance();
         if (client.player == null)
             return;
@@ -152,12 +154,12 @@ public class WayfarerRenderer {
             else
                 state.lookProgress = Math.max(0.0f, state.lookProgress - deltaTime * 4.0f);
 
-            renderWaypointTag(poseStack, camera, bufferSource, waypoint.name, dx, dy, dz, distSq, waypoint.color,
+            renderWaypointTag(poseStack, camera, nodeCollector, cameraRenderState, waypoint.name, dx, dy, dz, distSq, waypoint.color,
                     waypoint.icon, state.lookProgress, visualFade, waypoint.type);
         }
     }
 
-    private static void renderWaypointTag(PoseStack poseStack, Camera camera, MultiBufferSource consumers,
+    private static void renderWaypointTag(PoseStack poseStack, Camera camera, SubmitNodeCollector nodeCollector, CameraRenderState cameraRenderState,
             String label, double dx, double dy, double dz, double distanceSq,
             int textColor, @Nullable Identifier icon, float lookProgress, float visualFade,
             WaypointType type) {
@@ -193,7 +195,7 @@ public class WayfarerRenderer {
         if (icon != null && WayfarerConfig.showWaypointIcons != VisibilityMode.NEVER) {
             poseStack.pushPose();
             poseStack.translate(0, -8.0f, 0);
-            renderIcon(poseStack, consumers, icon, 14f, curve, visualFade, label);
+            renderIcon(poseStack, nodeCollector, icon, 14f, curve, visualFade, label);
             poseStack.popPose();
         }
 
@@ -239,11 +241,11 @@ public class WayfarerRenderer {
 
                 poseStack.pushPose();
                 poseStack.translate(0, textYOffset, 0);
-                Matrix4f textMat = poseStack.last().pose();
-                font.drawInBatch(text, hPath, 0, dimColor, false, textMat, consumers, Font.DisplayMode.SEE_THROUGH,
-                        finalBgColor, 15728880);
-                font.drawInBatch(text, hPath, 0, finalColor, false, textMat, consumers, Font.DisplayMode.NORMAL, 0,
-                        15728880);
+                FormattedCharSequence seq = text.getVisualOrderText();
+                nodeCollector.submitText(poseStack, hPath, 0, seq, false, Font.DisplayMode.SEE_THROUGH,
+                        15728880, dimColor, finalBgColor, 0);
+                nodeCollector.submitText(poseStack, hPath, 0, seq, false, Font.DisplayMode.NORMAL,
+                        15728880, finalColor, 0, 0);
                 poseStack.popPose();
             }
         }
@@ -251,7 +253,7 @@ public class WayfarerRenderer {
         poseStack.popPose();
     }
 
-    private static void renderIcon(PoseStack ps, MultiBufferSource consumers, Identifier icon, float size,
+    private static void renderIcon(PoseStack ps, SubmitNodeCollector nodeCollector, Identifier icon, float size,
             float curve,
             float fadeProgress, String name) {
         Minecraft client = Minecraft.getInstance();
@@ -281,19 +283,23 @@ public class WayfarerRenderer {
             }
         }
 
-        Matrix4f mat = ps.last().pose();
         int alpha = (int) (Mth.lerp(curve, 100, 160) * fadeProgress);
-        VertexConsumer b1 = consumers.getBuffer(RenderTypes.textSeeThrough(finalIcon));
-        drawQuad(b1, mat, -half, half, 0, u1, v2, alpha, 255, 255, 255);
-        drawQuad(b1, mat, half, half, 0, u2, v2, alpha, 255, 255, 255);
-        drawQuad(b1, mat, half, -half, 0, u2, v1, alpha, 255, 255, 255);
-        drawQuad(b1, mat, -half, -half, 0, u1, v1, alpha, 255, 255, 255);
-
-        VertexConsumer b2 = consumers.getBuffer(RenderTypes.entityTranslucent(finalIcon));
-        drawQuad(b2, mat, -half, half, 0, u1, v2, alphaSolid, 255, 255, 255);
-        drawQuad(b2, mat, half, half, 0, u2, v2, alphaSolid, 255, 255, 255);
-        drawQuad(b2, mat, half, -half, 0, u2, v1, alphaSolid, 255, 255, 255);
-        drawQuad(b2, mat, -half, -half, 0, u1, v1, alphaSolid, 255, 255, 255);
+        final Identifier seeThruIcon = finalIcon;
+        final float fu1 = u1, fv1 = v1, fu2 = u2, fv2 = v2;
+        nodeCollector.submitCustomGeometry(ps, RenderTypes.textSeeThrough(seeThruIcon), (pose, vc) -> {
+            Matrix4f mat = pose.pose();
+            drawQuad(vc, mat, -half, half, 0, fu1, fv2, alpha, 255, 255, 255);
+            drawQuad(vc, mat, half, half, 0, fu2, fv2, alpha, 255, 255, 255);
+            drawQuad(vc, mat, half, -half, 0, fu2, fv1, alpha, 255, 255, 255);
+            drawQuad(vc, mat, -half, -half, 0, fu1, fv1, alpha, 255, 255, 255);
+        });
+        nodeCollector.submitCustomGeometry(ps, RenderTypes.entityTranslucent(seeThruIcon), (pose, vc) -> {
+            Matrix4f mat = pose.pose();
+            drawQuad(vc, mat, -half, half, 0, fu1, fv2, alphaSolid, 255, 255, 255);
+            drawQuad(vc, mat, half, half, 0, fu2, fv2, alphaSolid, 255, 255, 255);
+            drawQuad(vc, mat, half, -half, 0, fu2, fv1, alphaSolid, 255, 255, 255);
+            drawQuad(vc, mat, -half, -half, 0, fu1, fv1, alphaSolid, 255, 255, 255);
+        });
     }
 
     private static void drawQuad(VertexConsumer b, Matrix4f mat, float x, float y, float z, float u, float v, int alpha,

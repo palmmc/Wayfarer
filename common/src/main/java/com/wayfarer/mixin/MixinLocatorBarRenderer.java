@@ -9,7 +9,7 @@ import com.wayfarer.config.WayfarerConfig.LocatorVisibilityMode;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.contextualbar.LocatorBarRenderer;
+import net.minecraft.client.gui.contextualbar.LocatorBar;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.util.Mth;
@@ -30,7 +30,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(LocatorBarRenderer.class)
+@Mixin(LocatorBar.class)
 public abstract class MixinLocatorBarRenderer {
     @Shadow(remap = false)
     @Final
@@ -60,8 +60,8 @@ public abstract class MixinLocatorBarRenderer {
         float deltaTime = lastFrameTime_locator == 0 ? 0 : (now - lastFrameTime_locator) / 1000f;
         lastFrameTime_locator = now;
 
-        int left = ((LocatorBarRenderer) (Object) this).left(this.minecraft.getWindow());
-        int top = ((LocatorBarRenderer) (Object) this).top(this.minecraft.getWindow());
+        int left = ((LocatorBar) (Object) this).left(this.minecraft.getWindow());
+        int top = ((LocatorBar) (Object) this).top(this.minecraft.getWindow());
         int barWidth = 182;
         int centerX = left + (barWidth / 2);
 

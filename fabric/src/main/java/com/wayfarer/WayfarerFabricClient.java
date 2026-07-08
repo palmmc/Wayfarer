@@ -20,11 +20,12 @@ public class WayfarerFabricClient implements ClientModInitializer {
             e.printStackTrace();
         }
 
-        LevelRenderEvents.BEFORE_TRANSLUCENT_TERRAIN.register(context -> {
+        LevelRenderEvents.BEFORE_GIZMOS.register(context -> {
             WayfarerRenderer.render(
                     context.poseStack(),
-                    context.gameRenderer().getMainCamera(),
-                    context.bufferSource());
+                    context.gameRenderer().mainCamera(),
+                    context.submitNodeCollector(),
+                    context.levelState().cameraRenderState);
         });
 
         ClientPlayNetworking.registerGlobalReceiver(S2CWaypointPacket.TYPE, (payload, context) -> {

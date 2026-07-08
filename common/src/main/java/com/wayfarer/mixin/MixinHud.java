@@ -2,9 +2,9 @@ package com.wayfarer.mixin;
 
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.Hud;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.contextualbar.LocatorBarRenderer;
+import net.minecraft.client.gui.contextualbar.LocatorBar;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -15,13 +15,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.wayfarer.client.WayfarerKeys;
 
-@Mixin(Gui.class)
-public abstract class MixinGui {
+@Mixin(Hud.class)
+public abstract class MixinHud {
     @Shadow(remap = false)
     @Final
     private Minecraft minecraft;
     @Unique
-    private LocatorBarRenderer wayfarer$forcedLocatorBar;
+    private LocatorBar wayfarer$forcedLocatorBar;
 
     @Unique
     private long wayfarer$lastAnimationTime = -1L;
@@ -44,7 +44,7 @@ public abstract class MixinGui {
 
         if (this.minecraft.level != null) {
             if (this.wayfarer$forcedLocatorBar == null) {
-                this.wayfarer$forcedLocatorBar = new LocatorBarRenderer(this.minecraft);
+                this.wayfarer$forcedLocatorBar = new LocatorBar(this.minecraft);
             }
 
             if (WayfarerKeys.locatorBarAlpha > 0 && this.minecraft.player != null

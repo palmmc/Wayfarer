@@ -4,7 +4,7 @@ import com.wayfarer.api.WayfarerRegistry;
 import com.wayfarer.client.WayfarerRenderer;
 import com.wayfarer.network.S2CWaypointPacket;
 import net.minecraft.client.Minecraft;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.event.SubmitCustomGeometryEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
@@ -15,7 +15,7 @@ import com.wayfarer.client.WayfarerKeys;
 
 public class WayfarerNeoForgeClient {
     public static void init() {
-        NeoForge.EVENT_BUS.addListener(WayfarerNeoForgeClient::onRenderAfterTranslucentBlocks);
+        NeoForge.EVENT_BUS.addListener(WayfarerNeoForgeClient::onSubmitCustomGeometry);
     }
 
     public static void onRegisterKeys(RegisterKeyMappingsEvent event) {
@@ -53,11 +53,11 @@ public class WayfarerNeoForgeClient {
         WayfarerCommands.register(event.getDispatcher());
     }
 
-    public static void onRenderAfterTranslucentBlocks(RenderLevelStageEvent.AfterTranslucentBlocks event) {
-        Minecraft client = Minecraft.getInstance();
+    public static void onSubmitCustomGeometry(SubmitCustomGeometryEvent event) {
         WayfarerRenderer.render(
                 event.getPoseStack(),
-                client.gameRenderer.getMainCamera(),
-                client.renderBuffers().bufferSource());
+                Minecraft.getInstance().gameRenderer.mainCamera(),
+                event.getSubmitNodeCollector(),
+                event.getLevelRenderState().cameraRenderState);
     }
 }
