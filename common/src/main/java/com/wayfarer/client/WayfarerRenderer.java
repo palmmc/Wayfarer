@@ -181,8 +181,8 @@ public class WayfarerRenderer {
 
         poseStack.pushPose();
         poseStack.translate(rDx, rDy, rDz);
-        poseStack.mulPose(Axis.YP.rotationDegrees(-camera.yRot()));
-        poseStack.mulPose(Axis.XP.rotationDegrees(camera.xRot()));
+        poseStack.rotate(Axis.YP.rotationDegrees(-camera.yRot()));
+        poseStack.rotate(Axis.XP.rotationDegrees(camera.xRot()));
 
         float bScale = WayfarerConfig.waypointScale;
         float curve = lookProgress * lookProgress * (3 - 2 * lookProgress);

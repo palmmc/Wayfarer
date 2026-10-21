@@ -10,7 +10,7 @@ public class WayfarerKeys {
 
     public static final KeyMapping LOCATOR_BAR_KEY = new KeyMapping(
             "key.wayfarer.locator_bar",
-            InputConstants.Type.KEYSYM,
+            InputConstants.Type.KEYBOARD,
             InputConstants.KEY_TAB,
             WAYFARER_CATEGORY);
 
